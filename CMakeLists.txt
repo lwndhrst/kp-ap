@@ -22,8 +22,8 @@ get_filename_component(CINDER_PATH "${ci_SOURCE_DIR}/" ABSOLUTE)
 include("${CINDER_PATH}/proj/cmake/modules/cinderMakeApp.cmake")
 ci_make_app(
     APP_NAME    ${PROJECT_NAME}
-	SOURCES     ${PROJECT_SOURCES}
-	CINDER_PATH ${CINDER_PATH}
+    SOURCES     ${PROJECT_SOURCES}
+    CINDER_PATH ${CINDER_PATH}
 )
 
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
