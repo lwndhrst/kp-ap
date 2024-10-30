@@ -23,7 +23,7 @@ include("${CINDER_PATH}/proj/cmake/modules/cinderMakeApp.cmake")
 ci_make_app(
     APP_NAME    ${PROJECT_NAME}
     SOURCES     ${PROJECT_SOURCES}
-    INCLUDES    ${PROJECT_HEADERS}
+    INCLUDES    ${PROJECT_INCLUDE}
     CINDER_PATH ${CINDER_PATH}
 )
 
