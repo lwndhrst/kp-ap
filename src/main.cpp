@@ -1,58 +1,124 @@
 #include "cinder/app/App.h"
 #include "cinder/app/RendererGl.h"
+#include "cinder/Rand.h"
 #include "cinder/gl/gl.h"
 
 #include "cinder/audio/Context.h"
 #include "cinder/audio/GenNode.h"
-#include "cinder/audio/GainNode.h"
+#include "cinder/audio/NodeEffects.h"
+#include "cinder/audio/MonitorNode.h"
+#include "cinder/audio/Utilities.h"
+
+#include "AudioDrawUtils.h"
 
 using namespace ci;
 using namespace ci::app;
 using namespace std;
 
-class NodeBasic : public App {
+class NodeAdvancedApp : public App {
   public:
 	void setup() override;
 	void mouseDrag( MouseEvent event ) override;
+	void update() override;
 	void draw() override;
 
-	audio::GenNodeRef	mGen;	// Gen's generate audio signals
-	audio::GainNodeRef	mGain;	// Gain modifies the volume of the signal
+	audio::GenNodeRef				mGen;		// GenNode's generate audio signals
+	audio::FilterLowPassNodeRef		mLowpass;	// lowpass filter to reduce high frequency content.
+	audio::GainNodeRef				mGain;		// modifies the volume of the signal
+	audio::MonitorNodeRef			mMonitor;	// lets you retrieve audio samples in a thread-safe manner
+
+	vector<size_t>	mCPentatonicScale;
+
+	float mFreqRampTime;
 };
 
-void NodeBasic::setup()
+void NodeAdvancedApp::setup()
 {
-	// You use the audio::Context to make new audio::Node instances (audio::master() is the speaker-facing Context).
-	auto ctx = audio::master();
-	//auto output = ctx->getOutput();
+	auto ctx = audio::Context::master();
 
-	mGen = ctx->makeNode( new audio::GenSineNode );
+	// Here we're using a GenTriangleNode, which generates a triangle waveform that contains many upper harmonics.
+	// To reduce the sharpness, a lowpass filter is used to cut down the higher frequences.
+	mGen = ctx->makeNode( new audio::GenTriangleNode( audio::Node::Format().autoEnable() ) );
+	mLowpass = ctx->makeNode( new audio::FilterLowPassNode );
 	mGain = ctx->makeNode( new audio::GainNode );
+	mMonitor = ctx->makeNode( new audio::MonitorNode );
 
-	mGen->setFreq( 220 );
-	mGain->setValue( 0.5f );
+	mLowpass->setFreq( 400 );
 
-	// connections can be made this way or with connect(). The master Context's getOutput() is the speakers by default.
-	mGen >> mGain >> ctx->getOutput();
+	// Below we tell the Gain's Param to ramp from 0 to 0.5 over 2 seconds, making it slowly fade in.!
+	mGain->getParam()->applyRamp( 0, 0.5f, 2.0f );
 
-	// Node's need to be enabled to process audio. EffectNode's are enabled by default, while NodeSource's (like Gen) need to be switched on.
-	mGen->enable();
+	// make the synthesis connection
+	mGen >> mLowpass >> mGain >> ctx->getOutput();
 
-	// Context also must be started. Starting and stopping this controls the entire DSP graph.
+	// Also feed the Gain to our Scope so that we can see what the waveform looks like.
+	mGain >> mMonitor;
+
 	ctx->enable();
+
+	// Many times it is easier to specify musical pitches in MIDI format, which is linear rather than in hertz.
+	// Below is the pentatonic notes for the C major scale from C3-C5, represented in MIDI values.
+	mCPentatonicScale.push_back( 48 );
+	mCPentatonicScale.push_back( 50 );
+	mCPentatonicScale.push_back( 52 );
+	mCPentatonicScale.push_back( 55 );
+	mCPentatonicScale.push_back( 57 );
+	mCPentatonicScale.push_back( 60 );
+	mCPentatonicScale.push_back( 62 );
+	mCPentatonicScale.push_back( 64 );
+	mCPentatonicScale.push_back( 67 );
+	mCPentatonicScale.push_back( 69 );
+	mCPentatonicScale.push_back( 72 );
+
+	mFreqRampTime = 0.015f;
 }
 
-void NodeBasic::mouseDrag( MouseEvent event )
+void NodeAdvancedApp::mouseDrag( MouseEvent event )
 {
-	mGen->setFreq( event.getPos().x );
-	mGain->setValue( 1.0f - (float)event.getPos().y / (float)getWindowHeight() );
+	if( ! getWindowBounds().contains( event.getPos() ) )
+		return;
+
+	float yPercent = 1.0f - (float)event.getPos().y / (float)getWindowHeight();
+	mLowpass->setFreq( 200 + yPercent * 800 );
+
+	mFreqRampTime = 0.010f + event.getX() / 5000.0f;
 }
 
-void NodeBasic::draw()
+void NodeAdvancedApp::update()
 {
-	gl::clear( Color( 0, mGain->getValue(), 0.2f ) );
+	size_t seqPeriod = 10 * randInt( 1, 4 );
+
+	if( getElapsedFrames() % seqPeriod == 0 ) {
+		size_t index = randInt( mCPentatonicScale.size() );
+		size_t midiPitch = mCPentatonicScale.at( index );
+		mGen->getParamFreq()->applyRamp( audio::midiToFreq( midiPitch ), mFreqRampTime );
+	}
 }
 
-CINDER_APP( NodeBasic, RendererGl, []( App::Settings *settings ) {
+void NodeAdvancedApp::draw()
+{
+	gl::clear();
+
+	// Draw the Scope's recorded Buffer in the upper right.
+	if( mMonitor && mMonitor->getNumConnectedInputs() ) {
+		Rectf scopeRect( getWindowWidth() - 210, 10, getWindowWidth() - 10, 110 );
+		drawAudioBuffer( mMonitor->getBuffer(), scopeRect, true );
+	}
+
+	// Visualize the Gen's current pitch with a circle.
+
+	float pitchMin = mCPentatonicScale.front();
+	float pitchMax = mCPentatonicScale.back();
+	float currentPitch = audio::freqToMidi( mGen->getFreq() ); // MIDI values do not have to be integers for us.
+
+	float percent = ( currentPitch - pitchMin ) / ( pitchMax - pitchMin );
+
+	float circleX = percent * getWindowWidth();
+
+	gl::color( 0, 0.8f, 0.8f );
+	gl::drawSolidCircle( vec2( circleX, getWindowCenter().y ), 50 );
+}
+
+CINDER_APP( NodeAdvancedApp, RendererGl( RendererGl::Options().msaa( 4 ) ), []( App::Settings *settings ) {
 	settings->setMultiTouchEnabled( false );
 } )
