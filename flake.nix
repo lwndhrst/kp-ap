@@ -40,6 +40,11 @@
 
           # pkgs.nixgl.nixGLMesa
         ];
+
+        shellHook = ''
+          export MPG123_INCLUDE_DIRS=${pkgs.libmpg123}/include
+          export MPG123_LIBRARIES=${pkgs.libmpg123}/lib
+        '';
       };
     };
 }
