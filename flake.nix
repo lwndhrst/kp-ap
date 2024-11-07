@@ -32,11 +32,6 @@
           cmake
           customPkgs.cinder
         ];
-
-        shellHook = ''
-          export CINDER_PATH=${pkgs.customPkgs.cinder}
-          # export CMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH:${pkgs.customPkgs.cinder}/lib/linux/x86_64/ogl/Release
-        '';
       };
     };
 }
