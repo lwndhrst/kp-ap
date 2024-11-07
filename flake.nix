@@ -3,18 +3,24 @@
     nixpkgs = {
       url = "github:nixos/nixpkgs/nixos-unstable";
     };
+    
+    custom-nixpkgs = {
+      url = "github:lwndhrst/custom-nixpkgs";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     nixgl = {
       url = "github:guibou/nixGL";
     };
   };
 
-  outputs = { self, nixpkgs, nixgl }:
+  outputs = { self, nixpkgs, custom-nixpkgs, nixgl }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs {
         inherit system;
         overlays = [
+          custom-nixpkgs.overlays.default
           nixgl.overlays.default
         ];
       };
@@ -24,26 +30,12 @@
         packages = with pkgs; [
           clang-tools
           cmake
-          # glsl_analyzer
-
-          curl.dev
-          fontconfig.dev
-          libglvnd
-          libmpg123
-          libpulseaudio
-          xorg.libX11
-          zlib
-
-          # xorg.libXi
-          # xorg.libXinerama
-          # libGLU
-
-          # pkgs.nixgl.nixGLMesa
+          customPkgs.cinder
         ];
 
         shellHook = ''
-          export MPG123_INCLUDE_DIRS=${pkgs.libmpg123}/include
-          export MPG123_LIBRARIES=${pkgs.libmpg123}/lib
+          export CINDER_PATH=${pkgs.customPkgs.cinder}
+          # export CMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH:${pkgs.customPkgs.cinder}/lib/linux/x86_64/ogl/Release
         '';
       };
     };

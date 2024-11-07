@@ -1,5 +1,25 @@
 {
   "nodes": {
+    "custom-nixpkgs": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1730962838,
+        "narHash": "sha256-EZkseZ1SzeGxzNSxRlVAalUrkfhQhwyrmBIP2ASziOQ=",
+        "owner": "lwndhrst",
+        "repo": "custom-nixpkgs",
+        "rev": "63b6cb1307b3d37b14f4e3f87386dc9a5fb61f5e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "lwndhrst",
+        "repo": "custom-nixpkgs",
+        "type": "github"
+      }
+    },
     "flake-utils": {
       "locked": {
         "lastModified": 1659877975,
@@ -67,6 +87,7 @@
     },
     "root": {
       "inputs": {
+        "custom-nixpkgs": "custom-nixpkgs",
         "nixgl": "nixgl",
         "nixpkgs": "nixpkgs_2"
       }
