@@ -31,3 +31,13 @@ ci_make_app(
     INCLUDES    ${PROJECT_INCLUDE}
     CINDER_PATH ${CINDER_PATH}
 )
+
+add_subdirectory("samples/_audio/BufferPlayer/proj/cmake/")
+add_subdirectory("samples/_audio/DelayFeedback/proj/cmake/")
+add_subdirectory("samples/_audio/InputAnalyzer/proj/cmake/")
+add_subdirectory("samples/_audio/MultichannelOutput/proj/cmake/")
+add_subdirectory("samples/_audio/NodeAdvanced/proj/cmake/")
+add_subdirectory("samples/_audio/NodeBasic/proj/cmake/")
+add_subdirectory("samples/_audio/NodeSubclassing/proj/cmake/")
+add_subdirectory("samples/_audio/VoiceBasic/proj/cmake/")
+add_subdirectory("samples/_audio/VoiceBasicProcessing/proj/cmake/")
