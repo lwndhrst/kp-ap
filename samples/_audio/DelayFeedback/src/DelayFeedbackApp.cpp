@@ -20,8 +20,7 @@
 #include "cinder/audio/NodeEffects.h"
 #include "cinder/audio/Utilities.h"
 
-// #include "Resources.h"
-#include "../include/Resources.h"
+#include "Resources.h"
 
 const float MAX_VOLUME		= 0.6f;
 const size_t MAX_SPLASHES	= 200;
